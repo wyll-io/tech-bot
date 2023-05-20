@@ -1,9 +1,6 @@
-use std::sync::Mutex;
-
-use once_cell::sync::OnceCell;
 use poise::command;
 
-use crate::database::Database;
+use crate::database::*;
 
 const HELP_MESSAGE: &str = "
 Hello fellow human! I am a bot that can help you adding new technologies to a git repository.
@@ -34,14 +31,11 @@ To get help, just type:
 /help
 ```
 ";
-const AUTHORIZED_USERS: [u64; 1] = [252497456447750144];
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, MsgData, Error>;
 
 pub struct MsgData {}
-
-pub static DB: OnceCell<Mutex<Database>> = OnceCell::new();
 
 /// Show help for all commands
 #[command(slash_command, prefix_command)]
@@ -58,7 +52,9 @@ pub async fn add(
     #[description = "Technology name"] technology: String,
     #[description = "Git repository link"] link: String,
 ) -> Result<(), Error> {
-    ctx.say(format!("Added {technology} with link {link}"))
+    add_tech(link.clone(), technology.clone())?;
+
+    ctx.say(format!("Added {technology} with link {link}",))
         .await?;
 
     Ok(())
@@ -67,7 +63,21 @@ pub async fn add(
 /// List all available technologies
 #[command(slash_command, prefix_command)]
 pub async fn list(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say("Listed all technologies").await?;
+    let techs = list_tech()?;
+    if techs.len() == 0 {
+        ctx.say("No technologies saved").await?;
+        return Ok(());
+    }
+
+    ctx.say(format!(
+        "Saved technologies: {}",
+        techs
+            .iter()
+            .map(|tech| format!("[{}]({})", tech.name, tech.link))
+            .collect::<Vec<String>>()
+            .join(", ")
+    ))
+    .await?;
 
     Ok(())
 }
@@ -78,7 +88,12 @@ pub async fn search(
     ctx: Context<'_>,
     #[description = "Technology name"] technology: String,
 ) -> Result<(), Error> {
-    ctx.say(format!("Found {technology}")).await?;
+    if let Some(tech) = search_tech(technology.clone())? {
+        ctx.say(format!("Name: {}\nLink: {}", tech.name, tech.link))
+            .await?;
+    } else {
+        ctx.say("No technology found").await?;
+    }
 
     Ok(())
 }
@@ -89,13 +104,37 @@ pub async fn remove(
     ctx: Context<'_>,
     #[description = "Technology name"] technology: String,
 ) -> Result<(), Error> {
-    if !AUTHORIZED_USERS.contains(&ctx.author().id.0) {
+    if is_auth_user(ctx.author().id.to_string())? {
         ctx.say("You don't have permission to remove a technology")
             .await?;
         return Ok(());
     }
 
-    ctx.say(format!("Removed {technology}")).await?;
+    remove_tech(technology)?;
+
+    ctx.say("Technology removed").await?;
+
+    Ok(())
+}
+
+/// Remove a technology from the technologies list
+#[command(slash_command, prefix_command)]
+pub async fn add_auth_user(
+    ctx: Context<'_>,
+    #[description = "Discord user ID"] id: String,
+) -> Result<(), Error> {
+    if !std::env::var("ADMIN_USERS")
+        .expect("missing ADMIN_USERS")
+        .contains(&ctx.author().id.to_string())
+    {
+        ctx.say("You don't have permission to add a new user")
+            .await?;
+        return Ok(());
+    }
+
+    set_auth_user(id)?;
+
+    ctx.say("User added!").await?;
 
     Ok(())
 }

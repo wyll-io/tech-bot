@@ -1,78 +1,88 @@
-use polodb_core::{
-    bson::{doc, oid::ObjectId},
-    Database as DB,
-};
+use once_cell::sync::OnceCell;
+use polodb_core::{bson::doc, Database};
 use serde::{Deserialize, Serialize};
-use std::{
-    io::{Error, ErrorKind},
-    str::FromStr,
-};
+use std::io::{Error, ErrorKind};
+
+pub static DB: OnceCell<Database> = OnceCell::new();
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-struct Technology {
-    link: String,
-    name: String,
+pub struct Technology {
+    pub link: String,
+    pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AuthorizedUser {
-    name: String,
+    discord_id: String,
 }
 
-pub struct Database {
-    pub db: DB,
+/// Add a new technology to the database.
+pub fn add_tech(link: String, name: String) -> Result<(), Error> {
+    DB.get()
+        .unwrap()
+        .collection::<Technology>("technologies")
+        .insert_one(Technology { link, name })
+        .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
+
+    Ok(())
 }
 
-impl Database {
-    /// Create a new database instance.
-    pub fn new() -> Self {
-        Self {
-            db: DB::open_file("test-polo.db").expect("failed to initialize database"),
-        }
-    }
+pub fn remove_tech(name: String) -> Result<(), Error> {
+    DB.get()
+        .unwrap()
+        .collection::<Technology>("technologies")
+        .delete_one(doc! { "name": name })
+        .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
 
-    /// Add a new technology to the database.
-    pub fn add_tech(&self, link: String, name: String) -> Result<String, Error> {
-        Ok(self
-            .db
-            .collection::<Technology>("technologies")
-            .insert_one(Technology { link, name })
-            .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
-            .inserted_id
-            .to_string())
-    }
+    Ok(())
+}
 
-    pub fn remove_tech(&self, id: &str) -> Result<(), Error> {
-        self.db
-            .collection::<Technology>("technologies")
-            .delete_one(doc! { "_id": Some(ObjectId::from_str(id).map_err(|err| Error::new(ErrorKind::InvalidInput, err))?) })
-            .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
+pub fn list_tech() -> Result<Vec<Technology>, Error> {
+    Ok(DB
+        .get()
+        .unwrap()
+        .collection("technologies")
+        .find(None)
+        .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
+        .filter(|doc| doc.is_ok())
+        .map(|doc| doc.unwrap())
+        .collect())
+}
 
-        Ok(())
+pub fn search_tech(name: String) -> Result<Option<Technology>, Error> {
+    if let Some(tech) = DB
+        .get()
+        .unwrap()
+        .collection::<Technology>("technologies")
+        .find(doc! { "name": {"$eq": name} })
+        .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
+        .next()
+    {
+        Ok(Some(
+            tech.map_err(|err| Error::new(ErrorKind::InvalidInput, err))?,
+        ))
+    } else {
+        Ok(None)
     }
+}
 
-    pub fn list_tech(&self) -> Result<Vec<Technology>, Error> {
-        Ok(self
-            .db
-            .collection("technologies")
-            .find(None)
-            .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
-            .filter(|doc| doc.is_ok())
-            .map(|doc| doc.unwrap())
-            .collect())
-    }
+pub fn set_auth_user(discord_id: String) -> Result<(), Error> {
+    DB.get()
+        .unwrap()
+        .collection("authorized_users")
+        .insert_one(AuthorizedUser { discord_id })
+        .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
 
-    pub fn search_tech(&self, name: String) -> Result<Technology, Error> {
-        if let Some(tech) = self
-            .db
-            .collection::<Technology>("technologies")
-            .find(doc! { "$eq": [{"name": name}] })
-            .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
-            .next()
-        {
-            Ok(tech.map_err(|err| Error::new(ErrorKind::InvalidInput, err))?)
-        } else {
-            Err(Error::new(ErrorKind::NotFound, "Technology not found"))
-        }
-    }
+    Ok(())
+}
+
+pub fn is_auth_user(discord_id: String) -> Result<bool, Error> {
+    Ok(DB
+        .get()
+        .unwrap()
+        .collection::<AuthorizedUser>("authorized_users")
+        .find(doc! { "$eq": [{"discord_id": discord_id}] })
+        .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
+        .next()
+        .is_some())
 }
