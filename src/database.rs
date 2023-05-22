@@ -1,5 +1,8 @@
 use once_cell::sync::OnceCell;
-use polodb_core::{bson::doc, Database};
+use polodb_core::{
+    bson::{doc, Regex},
+    Database,
+};
 use serde::{Deserialize, Serialize};
 use std::io::{Error, ErrorKind};
 
@@ -49,21 +52,20 @@ pub fn list_tech() -> Result<Vec<Technology>, Error> {
         .collect())
 }
 
-pub fn search_tech(name: String) -> Result<Option<Technology>, Error> {
-    if let Some(tech) = DB
+pub fn search_tech(name: String, options: String) -> Result<Vec<Technology>, Error> {
+    Ok(DB
         .get()
         .unwrap()
         .collection::<Technology>("technologies")
-        .find(doc! { "name": {"$eq": name} })
+        .find(doc! { "name": {"$regex": Regex {
+            pattern: name,
+            options: options,
+        }} })
         .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
-        .next()
-    {
-        Ok(Some(
-            tech.map_err(|err| Error::new(ErrorKind::InvalidInput, err))?,
-        ))
-    } else {
-        Ok(None)
-    }
+        .map(
+            |doc| doc.unwrap(), // todo: find a way to handle error
+        )
+        .collect::<Vec<Technology>>())
 }
 
 pub fn set_auth_user(discord_id: String) -> Result<(), Error> {

@@ -31,6 +31,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "aho-corasick"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67fc08ce920c31afb70f013dcce1bfc3a3195de6a228474e45e1f145b36f8d04"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -656,6 +665,7 @@ checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
+ "serde",
 ]
 
 [[package]]
@@ -919,20 +929,20 @@ dependencies = [
 
 [[package]]
 name = "polodb_core"
-version = "4.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "318217d967df760a6e1b3bf3702b8ba7806474bcad383c47b982e8a30027c124"
+version = "4.3.1"
 dependencies = [
  "bson",
  "byteorder",
  "crc64fast",
  "getrandom",
  "hashbrown 0.13.2",
+ "indexmap",
  "js-sys",
  "libc",
  "lz4_flex",
  "memmap2",
  "num_enum",
+ "regex",
  "serde",
  "serde-wasm-bindgen",
  "smallvec",
@@ -1029,6 +1039,8 @@ version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af83e617f331cc6ae2da5443c602dfa5af81e517212d9d611a5b3ba1777b5370"
 dependencies = [
+ "aho-corasick",
+ "memchr",
  "regex-syntax",
 ]
 

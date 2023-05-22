@@ -87,13 +87,23 @@ pub async fn list(ctx: Context<'_>) -> Result<(), Error> {
 pub async fn search(
     ctx: Context<'_>,
     #[description = "Technology name"] technology: String,
+    #[description = "Regex options"] options: Option<String>,
 ) -> Result<(), Error> {
-    if let Some(tech) = search_tech(technology.clone())? {
-        ctx.say(format!("Name: {}\nLink: {}", tech.name, tech.link))
-            .await?;
-    } else {
-        ctx.say("No technology found").await?;
+    let found_techs = search_tech(technology, options.map_or(String::new(), |opts| opts))?;
+    if found_techs.len() == 0 {
+        ctx.say("No technologies found").await?;
+        return Ok(());
     }
+
+    ctx.say(format!(
+        "Found technologies: {}",
+        found_techs
+            .iter()
+            .map(|tech| format!("Name: {} => Link: {}", tech.name, tech.link))
+            .collect::<Vec<String>>()
+            .join("\n")
+    ))
+    .await?;
 
     Ok(())
 }
