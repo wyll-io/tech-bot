@@ -53,14 +53,22 @@ pub fn list_tech() -> Result<Vec<Technology>, Error> {
 }
 
 pub fn search_tech(name: String, options: String) -> Result<Vec<Technology>, Error> {
+    let doc = if regex::Regex::new(&name).is_ok() {
+        doc! { "name": {"$regex": Regex {
+            pattern: name,
+            options: options,
+        }} }
+    } else {
+        doc! { "name": {
+            "$eq": name
+        } }
+    };
+
     Ok(DB
         .get()
         .unwrap()
         .collection::<Technology>("technologies")
-        .find(doc! { "name": {"$regex": Regex {
-            pattern: name,
-            options: options,
-        }} })
+        .find(doc)
         .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
         .map(
             |doc| doc.unwrap(), // todo: find a way to handle error

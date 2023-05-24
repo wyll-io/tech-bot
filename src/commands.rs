@@ -1,4 +1,5 @@
 use poise::command;
+use url::Url;
 
 use crate::database::*;
 
@@ -52,6 +53,11 @@ pub async fn add(
     #[description = "Technology name"] technology: String,
     #[description = "Git repository link"] link: String,
 ) -> Result<(), Error> {
+    if !Url::parse(&link).is_ok() {
+        ctx.say(format!("Link {link} is not a valid URL")).await?;
+        return Ok(());
+    }
+
     add_tech(link.clone(), technology.clone())?;
 
     ctx.say(format!("Added {technology} with link {link}",))
@@ -86,7 +92,7 @@ pub async fn list(ctx: Context<'_>) -> Result<(), Error> {
 #[command(slash_command, prefix_command)]
 pub async fn search(
     ctx: Context<'_>,
-    #[description = "Technology name"] technology: String,
+    #[description = "Technology name (can be a regex string)"] technology: String,
     #[description = "Regex options"] options: Option<String>,
 ) -> Result<(), Error> {
     let found_techs = search_tech(technology, options.map_or(String::new(), |opts| opts))?;
