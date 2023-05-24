@@ -52,16 +52,25 @@ pub async fn add(
     ctx: Context<'_>,
     #[description = "Technology name"] technology: String,
     #[description = "Git repository link"] link: String,
+    #[description = "Technology tags (comma separated)"] tags: Option<String>,
 ) -> Result<(), Error> {
     if !Url::parse(&link).is_ok() {
         ctx.say(format!("Link {link} is not a valid URL")).await?;
         return Ok(());
     }
 
-    add_tech(link.clone(), technology.clone())?;
+    let tags = tags.unwrap_or(String::new());
 
-    ctx.say(format!("Added {technology} with link {link}",))
-        .await?;
+    add_tech(
+        &link,
+        &technology,
+        &(&tags).split(",").collect::<Vec<&str>>(),
+    )?;
+
+    ctx.say(format!(
+        "Added {technology} with link {link} and tags [{tags}]"
+    ))
+    .await?;
 
     Ok(())
 }
@@ -79,7 +88,7 @@ pub async fn list(ctx: Context<'_>) -> Result<(), Error> {
         "Saved technologies: {}",
         techs
             .iter()
-            .map(|tech| format!("[{}]({})", tech.name, tech.link))
+            .map(|tech| format!("[{}]({}) **{}**", tech.name, tech.link, tech.tags.join(",")))
             .collect::<Vec<String>>()
             .join(", ")
     ))
@@ -94,8 +103,16 @@ pub async fn search(
     ctx: Context<'_>,
     #[description = "Technology name (can be a regex string)"] technology: String,
     #[description = "Regex options"] options: Option<String>,
+    #[description = "Technology tags (comma separated)"] tags: Option<String>,
 ) -> Result<(), Error> {
-    let found_techs = search_tech(technology, options.map_or(String::new(), |opts| opts))?;
+    let found_techs = search_tech(
+        technology,
+        options.map_or(String::new(), |opts| opts),
+        &tags
+            .unwrap_or(String::new())
+            .split(",")
+            .collect::<Vec<&str>>(),
+    )?;
     if found_techs.len() == 0 {
         ctx.say("No technologies found").await?;
         return Ok(());

@@ -12,6 +12,7 @@ pub static DB: OnceCell<Database> = OnceCell::new();
 pub struct Technology {
     pub link: String,
     pub name: String,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -20,11 +21,15 @@ struct AuthorizedUser {
 }
 
 /// Add a new technology to the database.
-pub fn add_tech(link: String, name: String) -> Result<(), Error> {
+pub fn add_tech(name: &str, link: &str, tags: &[&str]) -> Result<(), Error> {
     DB.get()
         .unwrap()
         .collection::<Technology>("technologies")
-        .insert_one(Technology { link, name })
+        .insert_one(Technology {
+            link: link.into(),
+            name: name.into(),
+            tags: tags.iter().map(|s| s.to_string()).collect(),
+        })
         .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?;
 
     Ok(())
@@ -52,23 +57,17 @@ pub fn list_tech() -> Result<Vec<Technology>, Error> {
         .collect())
 }
 
-pub fn search_tech(name: String, options: String) -> Result<Vec<Technology>, Error> {
-    let doc = if regex::Regex::new(&name).is_ok() {
-        doc! { "name": {"$regex": Regex {
-            pattern: name,
-            options: options,
-        }} }
-    } else {
-        doc! { "name": {
-            "$eq": name
-        } }
-    };
-
+pub fn search_tech(name: String, options: String, tags: &[&str]) -> Result<Vec<Technology>, Error> {
     Ok(DB
         .get()
         .unwrap()
         .collection::<Technology>("technologies")
-        .find(doc)
+        .find(doc! { "name": {"$regex": Regex {
+            pattern: name,
+            options: options,
+        }}, "tags": {
+            "$in": tags
+        } })
         .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
         .map(
             |doc| doc.unwrap(), // todo: find a way to handle error
