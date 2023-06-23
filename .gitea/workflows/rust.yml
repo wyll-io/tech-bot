@@ -23,5 +23,5 @@ jobs:
           toolchain: stable
           profile: minimal
 
-      - name: Test
+      - name: Run tests
         run: cargo test --verbose
