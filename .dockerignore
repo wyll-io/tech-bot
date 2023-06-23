@@ -1,2 +1,9 @@
 target
 .env
+Dockerfile
+.gitignore
+*.db
+*.db.wal
+.git*
+.dockerignore
+LICENSE
