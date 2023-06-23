@@ -12,13 +12,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test-build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Build
-        run: cargo build --verbose
+      - name: Setup rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
 
-      - name: Run tests
+      - name: Test
         run: cargo test --verbose
