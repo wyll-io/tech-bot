@@ -90,8 +90,7 @@ pub fn is_auth_user(discord_id: String) -> Result<bool, Error> {
         .get()
         .unwrap()
         .collection::<AuthorizedUser>("authorized_users")
-        .find(doc! { "$eq": [{"discord_id": discord_id}] })
+        .find_one(doc! { "discord_id": discord_id })
         .map_err(|err| Error::new(ErrorKind::InvalidInput, err))?
-        .next()
         .is_some())
 }

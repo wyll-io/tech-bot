@@ -157,7 +157,7 @@ pub async fn add_auth_user(
     #[description = "Discord user ID"] id: String,
 ) -> Result<(), Error> {
     if !std::env::var("ADMIN_USERS")
-        .expect("missing ADMIN_USERS")
+        .unwrap_or(String::new())
         .contains(&ctx.author().id.to_string())
     {
         ctx.say("You don't have permission to add a new user")
