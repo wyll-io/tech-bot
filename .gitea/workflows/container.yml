@@ -4,9 +4,12 @@ on:
   push:
     tags: ["v*.*.*"]
 
+env:
+  REGISTRY: gitea.antoine-langlois.net
+
 jobs:
   build-push:
-    runs-on: ubuntu-latest
+    runs-on: debian-docker
     steps:
       - uses: actions/checkout@v3
 
@@ -22,7 +25,7 @@ jobs:
       - name: Log into registry Gitea
         uses: docker/login-action@v2
         with:
-          registry: gitea.antoine-langlois.net
+          registry: ${{ env.REGISTRY }}
           username: ${{ gitea.repository_owner }}
           password: ${{ secrets.REGISTRY_TOKEN }}
 
@@ -31,8 +34,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            datahearth/tech-bot
-            gitea.antoine-langlois.net/datahearth/tech-bot
+            ${{ github.repository}}
+            ${{ env.REGISTRY }}/${{ github.repository}}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -41,6 +44,7 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@v4
         with:
+          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}}
           labels: ${{ steps.meta.outputs.labels }}

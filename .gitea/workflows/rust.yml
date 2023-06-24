@@ -13,15 +13,10 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: debian-rust
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Run tests
         run: cargo test --verbose
