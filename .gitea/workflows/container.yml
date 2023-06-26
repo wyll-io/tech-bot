@@ -35,8 +35,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ${{ github.repository }}
-            ${{ env.REGISTRY }}/${{ github.repository }}
+            ${{ gitea.repository }}
+            ${{ env.REGISTRY }}/${{ gitea.repository }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -47,5 +47,7 @@ jobs:
         with:
           context: .
           push: true
+          cache-to: type=inline
+          cache-from: type=registry,ref=datahearth/tech-bot:latest
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
