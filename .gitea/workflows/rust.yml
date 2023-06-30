@@ -1,5 +1,7 @@
 name: Rust
 
+run-name: Run Rust commands
+
 on:
   push:
     branches:
@@ -13,7 +15,9 @@ env:
 
 jobs:
   test:
+    name: Run tests
     runs-on: debian-rust
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
