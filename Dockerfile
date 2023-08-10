@@ -42,22 +42,30 @@ CMD [ "/database" ]
 # * Build the web *
 # ********************************
 
-FROM node:18-slim as web-builder
+FROM node:18-slim as web-dependencies
 
 WORKDIR /app
 
-COPY frontend/ ./
+COPY frontend/package.json frontend/.npmrc ./
 
 RUN npm install
-RUN npm run build
 
 FROM node:18-alpine3.18 as web
 
+WORKDIR /tmp/app
+
+COPY frontend/ ./
+
+COPY --from=web-dependencies /app/node_modules ./node_modules
+
+RUN npm run build
+
 WORKDIR /app
 
-COPY --from=web-builder /app/build ./build 
-COPY --from=web-builder /app/node_modules ./node_modules
-COPY --from=web-builder /app/package.json /app/package-lock.json ./
+RUN mv /tmp/app/build /tmp/app/node_modules /tmp/app/package.json .
+RUN rm -rf /tmp/app
+
+COPY --from=web-dependencies /app/package-lock.json ./
 
 ENV DOTENV_CONFIG_PATH=/app/config/.env
 

@@ -21,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        target: [rust-builder, web-builder]
+        target: [rust-builder, web-dependencies]
 
     steps:
       - name: Checkout
