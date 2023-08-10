@@ -1,0 +1,53 @@
+query GetTechnology($name: String!, $options: String!, $tags: [String!]!) {
+  technology(name: $name, options: $options, tags: $tags) {
+    id
+    link
+    name
+    tags
+    userId
+    createdAt
+    updatedAt
+  }
+}
+query GetTechnologies {
+  technologies {
+    id
+    link
+    name
+    tags
+    userId
+    createdAt
+    updatedAt
+  }
+}
+
+mutation CreateTechnology(
+  $name: String!
+  $link: String!
+  $tags: [String!]!
+  $userId: String!
+) {
+  createTechnology(name: $name, link: $link, tags: $tags, userId: $userId) {
+    id
+    link
+    name
+    tags
+    userId
+    createdAt
+    updatedAt
+  }
+}
+mutation DeleteTechnology($id: Uuid!) {
+  deleteTechnology(id: $id)
+}
+mutation DeleteTechnologies($ids: [Uuid!]!) {
+  deleteTechnologies(ids: $ids)
+}
+mutation UpdateTechnology(
+  $id: Uuid!
+  $name: String
+  $link: String
+  $tags: [String!]
+) {
+  updateTechnology(id: $id, name: $name, link: $link, tags: $tags)
+}

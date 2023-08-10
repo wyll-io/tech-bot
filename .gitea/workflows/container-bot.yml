@@ -1,11 +1,11 @@
-name: Docker
+name: Docker bot
 
 run-name: Build and push Docker image
 
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*.*.*-bot"
 
 env:
   GITEA_REGISTRY: gitea.antoine-langlois.net
@@ -18,10 +18,6 @@ jobs:
     name: Build and push Docker image
 
     runs-on: debian-docker
-
-    strategy:
-      matrix:
-        target: [database, bot, web]
 
     steps:
       - name: Checkout
@@ -59,9 +55,9 @@ jobs:
             ${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}
             ${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}
           tags: |
-            type=semver,pattern=${{ matrix.target }}-latest
-            type=semver,pattern=${{ matrix.target }}-{{version}}
-            type=semver,pattern=${{ matrix.target }}-{{major}}.{{minor}}
+            type=semver,pattern=bot-latest
+            type=semver,pattern=bot-{{version}}
+            type=semver,pattern=bot-{{major}}.{{minor}}
             type=raw,value=latest,enable=false
 
       - name: Build and push Docker image
@@ -70,11 +66,11 @@ jobs:
         with:
           context: .
           push: true
-          target: ${{ matrix.target }}
+          target: bot
           cache-to: type=inline
           cache-from: |
-            type=registry,ref=${{ env.GITEA_REPOSITORY }}:${{ matrix.target }}-latest
-            type=registry,ref=${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}:${{ matrix.target }}-latest
-            type=registry,ref=${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}:${{ matrix.target }}-latest
+            type=registry,ref=${{ env.GITEA_REPOSITORY }}:bot-latest
+            type=registry,ref=${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}:bot-latest
+            type=registry,ref=${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}:bot-latest
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

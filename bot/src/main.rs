@@ -1,17 +1,23 @@
 mod commands;
-mod database;
+mod graphql;
 
 use poise::serenity_prelude as serenity;
 
-use commands::{add, add_auth_user, help, list, remove, search, MsgData};
-use database::DB;
-use polodb_core::Database;
+use commands::{add, help, list, remove, search, update, MsgData};
+use reqwest::Client;
 
 #[tokio::main]
 async fn main() {
+    match dotenvy::from_path(std::env::var("DOTENV_PATH").unwrap_or_else(|_| "/.env".to_string())) {
+        Ok(_) => {}
+        Err(e) => {
+            println!("Failed to load .env file: {}", e);
+        }
+    }
+
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![help(), add(), list(), search(), remove(), add_auth_user()],
+            commands: vec![help(), add(), list(), search(), remove(), update()],
             ..Default::default()
         })
         .token(std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN"))
@@ -21,13 +27,11 @@ async fn main() {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(MsgData {})
+                Ok(MsgData {
+                    client: Client::new(),
+                })
             })
         });
 
-    DB.get_or_init(|| {
-        Database::open_file(std::env::var("DB_PATH").expect("missing DB_PATH"))
-            .expect("failed to initialize database")
-    });
     framework.run().await.unwrap();
 }

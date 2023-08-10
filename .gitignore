@@ -2,3 +2,4 @@
 .env
 *.db
 *.wal
+node_modules
