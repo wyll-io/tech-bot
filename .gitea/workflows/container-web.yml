@@ -1,4 +1,4 @@
-name: Docker web
+name: Docker
 
 run-name: Build and push Docker image
 
@@ -14,8 +14,8 @@ env:
   GITEA_REPOSITORY: datahearth/tech-bot
 
 jobs:
-  build-push:
-    name: Build and push Docker image
+  build-push-builder:
+    name: Build and push web builder image
 
     runs-on: debian-docker
 
@@ -23,8 +23,65 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Docker buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Log into registry Docker
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Log into registry Gitea
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.GITEA_REGISTRY }}
+          username: ${{ gitea.repository_owner }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Log into registry GitHub
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.GH_REGISTRY }}
+          username: ${{ gitea.repository_owner }}
+          password: ${{ secrets.GH_REGISTRY_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.GITEA_REPOSITORY }}
+            ${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}
+            ${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}
+          tags: |
+            type=semver,pattern=web-builder-latest
+            type=semver,pattern=web-builder-{{version}}
+            type=semver,pattern=web-builder-{{major}}.{{minor}}
+          flavor: |
+            latest=false
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          target: web-builder
+          cache-to: type=inline
+          cache-from: |
+            type=registry,ref=${{ env.GITEA_REPOSITORY }}:web-builder-latest
+            type=registry,ref=${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}:web-builder-latest
+            type=registry,ref=${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}:web-builder-latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build-push-services:
+    name: Build and push service images
+
+    needs: build-push-builder
+    runs-on: debian-docker
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Log into registry Docker
         uses: docker/login-action@v2
@@ -58,7 +115,8 @@ jobs:
             type=semver,pattern=web-latest
             type=semver,pattern=web-{{version}}
             type=semver,pattern=web-{{major}}.{{minor}}
-            type=raw,value=latest,enable=false
+          flavor: |
+            latest=false
 
       - name: Build and push Docker image
         id: build-and-push
