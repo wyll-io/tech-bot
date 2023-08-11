@@ -2,15 +2,18 @@
 // for information about these interfaces
 declare global {
 	namespace App {
-		// interface Error {
-		// 	status: number;
-		// 	message: string;
-		// }
+		// interface Error {}
 
 		interface Locals {
 			session: boolean;
 		}
-		// interface PageData {}
+		interface PageData {
+			user?: {
+				id: string;
+				username: string;
+				avatar: string;
+			};
+		}
 		// interface Platform {}
 	}
 }

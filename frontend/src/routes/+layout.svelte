@@ -7,6 +7,9 @@
 	import type { PageData } from './$types';
 
 	export let data: PageData;
+
+	$: ({ username, avatar, id } = data);
+
 	setContextClient(
 		new Client({
 			url: env.PUBLIC_GRAPHQL_ENDPOINT,
@@ -24,13 +27,13 @@
 		</div>
 
 		<div class="flex-1 justify-end space-x-5 mr-5">
-			{#if data.id && data.avatar && data.username}
+			{#if id && avatar && username}
 				<div class="tooltip tooltip-bottom tooltip-info" data-tip="Copy ID">
 					<button
 						class="btn btn-ghost p-0 normal-case"
-						on:click={() => navigator.clipboard.writeText(data.id)}
+						on:click={() => navigator.clipboard.writeText(id)}
 					>
-						{data.username}
+						{username}
 					</button>
 				</div>
 				<div class="tooltip tooltip-bottom tooltip-info" data-tip="Logout">
@@ -40,7 +43,7 @@
 				</div>
 				<div class="avatar">
 					<div class="w-8 rounded-full">
-						<img src={data.avatar} alt="user's avatar" />
+						<img src={avatar} alt="user's avatar" />
 					</div>
 				</div>
 			{/if}
