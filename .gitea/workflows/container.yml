@@ -19,10 +19,6 @@ jobs:
 
     runs-on: debian-docker
 
-    strategy:
-      matrix:
-        target: [rust-builder, web-dependencies]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -56,9 +52,9 @@ jobs:
             ${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}
             ${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}
           tags: |
-            type=semver,pattern=${{ matrix.target }}-latest
-            type=semver,pattern=${{ matrix.target }}-{{version}}
-            type=semver,pattern=${{ matrix.target }}-{{major}}.{{minor}}
+            type=semver,pattern=web-dependencies-latest
+            type=semver,pattern=web-dependencies-{{version}}
+            type=semver,pattern=web-dependencies-{{major}}.{{minor}}
           flavor: |
             latest=false
 
@@ -68,12 +64,12 @@ jobs:
         with:
           context: .
           push: true
-          target: ${{ matrix.target }}
+          target: web-dependencies
           cache-to: type=inline
           cache-from: |
-            type=registry,ref=${{ env.GITEA_REPOSITORY }}:${{ matrix.target }}-latest
-            type=registry,ref=${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}:${{ matrix.target }}-latest
-            type=registry,ref=${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}:${{ matrix.target }}-latest
+            type=registry,ref=${{ env.GITEA_REPOSITORY }}:web-dependencies-latest
+            type=registry,ref=${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}:web-dependencies-latest
+            type=registry,ref=${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}:web-dependencies-latest
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -138,5 +134,6 @@ jobs:
             type=registry,ref=${{ env.GITEA_REPOSITORY }}:${{ matrix.target }}-latest
             type=registry,ref=${{ env.GITEA_REGISTRY }}/${{ env.GITEA_REPOSITORY }}:${{ matrix.target }}-latest
             type=registry,ref=${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}:${{ matrix.target }}-latest
+            ${{ (contains(${{ matrix.target }}, 'web') && 'type=registry,ref=${{ env.GH_REGISTRY }}/${{ env.GH_REPOSITORY }}:web-dependencies-latest') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

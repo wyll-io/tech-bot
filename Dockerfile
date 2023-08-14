@@ -1,34 +1,36 @@
 # ********************************
-# * Build the bot and database *
+# * Build & deploy bot ***********
 # ********************************
-
-FROM rust:1 as rust-builder
+FROM rust:1 as bot-builder
 
 WORKDIR /app
 
-COPY Cargo.toml Cargo.lock ./
-COPY bot /app/bot
-COPY database /app/database
+COPY Cargo.toml Cargo.lock bot ./
 
-RUN cargo build -r --workspace
+RUN cargo build --release --bin bot
 
-# ********************************
-# * Deploy the bot *
-# ********************************
 
 FROM gcr.io/distroless/cc as bot
 
-COPY --from=rust-builder /app/target/release/bot /bot
+COPY --from=bot-builder /app/target/release/bot /bot
 
 CMD [ "/bot" ]
 
 # ********************************
-# * Deploy the database *
+# * Build & deploy the database **
 # ********************************
+FROM rust:1 as db-builder
+
+WORKDIR /app
+
+COPY Cargo.toml Cargo.lock database ./
+
+RUN cargo build --release --bin database
+
 
 FROM gcr.io/distroless/cc as database
 
-COPY --from=rust-builder /app/target/release/database /database
+COPY --from=db-builder /app/target/release/database /database
 
 ENV DB_PATH=/app/tech-bot.db
 
@@ -39,7 +41,7 @@ VOLUME [ "/app" ]
 CMD [ "/database" ]
 
 # ********************************
-# * Build the web *
+# * Build the web ***************
 # ********************************
 
 FROM node:18-slim as web-dependencies
