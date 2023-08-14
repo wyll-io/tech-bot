@@ -2,7 +2,7 @@ set shell := ["zsh", "-uc"]
 
 base_img_name := "datahearth/tech-bot"
 gitea_img_name := "gitea.antoine-langlois.net/" + base_img_name
-all_targets := "rust-builder web-dependencies bot web database"
+all_targets := "web-dependencies bot web database"
 
 alias b := build
 alias p := push
@@ -11,7 +11,7 @@ alias pa := push-all
 
 gen-graphql:
   @graphql-client introspect-schema http://localhost:8080/graphql > ./bot/graphql/schema.json
-  
+  @echo "GrahQL schema generated. Don't forget to update \"./bot/graphql/query.graphql\"!"
 
 build TARGET:
   @docker build -t {{base_img_name}}:{{TARGET}}-latest \
