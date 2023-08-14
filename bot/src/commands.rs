@@ -174,7 +174,7 @@ pub async fn search(
         .post(env::var("GRAPHQL_ENDPOINT").expect("GRAPHQL_ENDPOINT not set"))
         .json(&GetTechnology::build_query(get_technology::Variables {
             name: technology,
-            options: options,
+            options,
             tags: if let Some(tags) = tags {
                 Some(
                     tags.split(',')
