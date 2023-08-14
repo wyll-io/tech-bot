@@ -12,33 +12,38 @@ Save technologies you want to share/remember in a simple way inside Discord.
 
 ```bash
 # BOT
-export DISCORD_TOKEN=TOKEN
-export GRAPHQL_ENDPOINT="http://host/graphql"
+cat << EOF > .env
+DISCORD_TOKEN=TOKEN
+GRAPHQL_ENDPOINT="http://database/graphql"
+EOF
 
 # DATABASE
-export DB_PATH="/path/to/db/database.db"
+cat << EOF > .env
+DB_PATH="/path/to/db/database.db"
+EOF
 
 # FRONTEND
-export FRONT_VOLUME
-cat << EOF > $FRONT_VOLUME/.env
+cat << EOF > $DOTENV_CONFIG_PATH # <==== Default to "/app/config/.env" in the image
 PORT=3000
 HOST=127.0.0.1
-PUBLIC_GRAPHQL_ENDPOINT="$GRAPHQL_ENDPOINT"
+PUBLIC_GRAPHQL_ENDPOINT="http://database/graphql"
 CLIENT_ID="DISCORD_APP_ID"
 CLIENT_SECRET="DISCORD_APP_SECRET"
 ORIGIN="http://host"
 EOF
 
+# Side note: ".env" file for "bot" and "database" are not mandatory, but if you don't use them, you will need to pass the environment variables to the container. Default path for ".env" is "/.env"
+
 docker run -d \
   --name tech-bot-bot \
-  -e DISCORD_TOKEN=$DISCORD_TOKEN \
-  -e GRAPHQL_ENDPOINT=$GRAPHQL_ENDPOINT \
+  -v $PWD/.env:/.env \
   --restart unless-stopped \
   gitea.antoine-langlois.net/datahearth/tech-bot:bot-latest
 
 docker run -d \
   --name tech-bot-database \
-  -v $DB_PATH:/app/database.db \
+  -v $PWD/.env:/.env \
+  -v $DATABASE_VOLUME:/app \
   --restart unless-stopped \
   gitea.antoine-langlois.net/datahearth/tech-bot:database-latest
 
@@ -62,6 +67,17 @@ cd tech-bot
 cargo build --release
 
 # Run
+# BOT
+cat << EOF > .env
+DISCORD_TOKEN=TOKEN
+GRAPHQL_ENDPOINT="http://database/graphql"
+EOF
+
+# DATABASE
+cat << EOF > .env
+DB_PATH="/path/to/db/database.db"
+EOF
+
 . ./target/release/tech-bot/database
 . ./target/release/tech-bot/bot
 
@@ -75,7 +91,7 @@ pnpm build
 ## Run
 export PORT=3000
 export HOST=127.0.0.1
-export PUBLIC_GRAPHQL_ENDPOINT="$GRAPHQL_ENDPOINT"
+export PUBLIC_GRAPHQL_ENDPOINT="http://database/graphql"
 export CLIENT_ID="DISCORD_APP_ID"
 export CLIENT_SECRET="DISCORD_APP_SECRET"
 export ORIGIN="http://host"
@@ -98,7 +114,7 @@ To list all technologies, just type:
 
 To search for a technology, just type:
 
-/search <technology>
+/search <technology> <options> <tags>
 
 
 To remove a technology, you need to have the permission to remote a tech from the list.
