@@ -164,21 +164,26 @@ pub async fn list(ctx: Context<'_>) -> Result<(), Error> {
 #[command(slash_command, prefix_command)]
 pub async fn search(
     ctx: Context<'_>,
-    #[description = "Technology name (can be a regex string)"] technology: String,
+    #[description = "Technology name (can be a regex string)"] technology: Option<String>,
     #[description = "Regex options"] options: Option<String>,
     #[description = "Technology tags (comma separated)"] tags: Option<String>,
 ) -> Result<(), Error> {
-    let tags = tags.unwrap_or(String::new());
-    let final_tags = tags.split(',').map(|s| s.to_string());
-
     let rsp: Response<get_technology::ResponseData> = ctx
         .data()
         .client
         .post(env::var("GRAPHQL_ENDPOINT").expect("GRAPHQL_ENDPOINT not set"))
         .json(&GetTechnology::build_query(get_technology::Variables {
             name: technology,
-            options: options.unwrap_or(String::new()),
-            tags: final_tags.collect::<Vec<String>>(),
+            options: options,
+            tags: if let Some(tags) = tags {
+                Some(
+                    tags.split(',')
+                        .map(|s| s.to_string())
+                        .collect::<Vec<String>>(),
+                )
+            } else {
+                None
+            },
         }))
         .send()
         .await?

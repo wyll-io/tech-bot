@@ -1,4 +1,4 @@
-query GetTechnology($name: String!, $options: String!, $tags: [String!]!) {
+query GetTechnology($name: String, $options: String, $tags: [String!]) {
   technology(name: $name, options: $options, tags: $tags) {
     id
     link

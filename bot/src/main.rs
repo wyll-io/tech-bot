@@ -8,7 +8,7 @@ use reqwest::Client;
 
 #[tokio::main]
 async fn main() {
-    match dotenvy::from_path(std::env::var("DOTENV_PATH").unwrap_or_else(|_| "/.env".to_string())) {
+    match dotenvy::from_path(std::env::var("DOTENV_PATH").unwrap_or_else(|_| ".env".to_string())) {
         Ok(_) => {}
         Err(e) => {
             println!("Failed to load .env file: {}", e);

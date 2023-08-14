@@ -26,13 +26,13 @@ pub type Schema = RootNode<'static, QueryRoot, MutationRoot, EmptySubscription<D
 impl QueryRoot {
     fn technology(
         context: &DB,
-        name: String,
+        name: Option<String>,
         options: Option<String>,
         tags: Option<Vec<String>>,
     ) -> FieldResult<Vec<query::Technology>> {
         context
             .search_tech(
-                name,
+                name.unwrap_or(String::new()),
                 options.unwrap_or(String::new()),
                 &tags
                     .unwrap_or(Vec::new())

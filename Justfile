@@ -9,6 +9,10 @@ alias p := push
 alias ba := build-all
 alias pa := push-all
 
+gen-graphql:
+  @graphql-client introspect-schema http://localhost:8080/graphql > ./bot/graphql/schema.json
+  
+
 build TARGET:
   @docker build -t {{base_img_name}}:{{TARGET}}-latest \
     --target {{TARGET}} \

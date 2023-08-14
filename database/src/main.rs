@@ -40,7 +40,7 @@ static CONTEXT: OnceLock<DB> = OnceLock::new();
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    match dotenvy::from_path(std::env::var("DOTENV_PATH").unwrap_or_else(|_| "/.env".to_string())) {
+    match dotenvy::from_path(std::env::var("DOTENV_PATH").unwrap_or_else(|_| ".env".to_string())) {
         Ok(_) => {}
         Err(e) => {
             println!("Failed to load .env file: {}", e);
