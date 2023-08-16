@@ -5,15 +5,13 @@ declare global {
 		// interface Error {}
 
 		interface Locals {
-			session: boolean;
-		}
-		interface PageData {
 			user?: {
 				id: string;
 				username: string;
 				avatar: string;
 			};
 		}
+		// interface PageData {}
 		// interface Platform {}
 	}
 }

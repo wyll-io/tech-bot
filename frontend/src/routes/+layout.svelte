@@ -8,7 +8,7 @@
 
 	export let data: PageData;
 
-	$: ({ username, avatar, id } = data);
+	$: ({ user } = data);
 
 	setContextClient(
 		new Client({
@@ -27,13 +27,13 @@
 		</div>
 
 		<div class="flex-1 justify-end space-x-5 mr-5">
-			{#if id && avatar && username}
+			{#if user}
 				<div class="tooltip tooltip-bottom tooltip-info" data-tip="Copy ID">
 					<button
 						class="btn btn-ghost p-0 normal-case"
-						on:click={() => navigator.clipboard.writeText(id)}
+						on:click={() => navigator.clipboard.writeText(user.id)}
 					>
-						{username}
+						{user.username}
 					</button>
 				</div>
 				<div class="tooltip tooltip-bottom tooltip-info" data-tip="Logout">
@@ -43,7 +43,7 @@
 				</div>
 				<div class="avatar">
 					<div class="w-8 rounded-full">
-						<img src={avatar} alt="user's avatar" />
+						<img src={user.avatar} alt="user's avatar" />
 					</div>
 				</div>
 			{/if}

@@ -1,50 +1,50 @@
+import refresh from '$lib/refreshToken';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 
 const protectedRoutes = ['/'];
 
-const auth: Handle = async ({ resolve, event }) => {
-	console.log(`handle auth for route: ${event.url.pathname}`);
-
+const handleAuth: Handle = async ({ resolve, event }) => {
 	const refreshToken = event.cookies.get('refresh-token');
-	let accessToken = event.cookies.get('access-token');
+	const accessToken = event.cookies.get('access-token');
 
-	console.log(`refresh token: ${refreshToken}`);
-	console.log(`access token: ${accessToken}`);
+	if (refreshToken && !accessToken) await refresh(event);
 
-	if (!accessToken && refreshToken) {
-		const rsp = await event.fetch('/auth/discord', {
-			method: 'PUT',
+	return await resolve(event);
+};
+
+const handleUserSession: Handle = async ({ resolve, event }) => {
+	if (event.cookies.get('access-token') && event.cookies.get('refresh-token')) {
+		const rsp = await event.fetch('https://discord.com/api/v10/users/@me', {
 			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({ refreshToken })
+				Authorization: `Bearer ${event.cookies.get('access-token')}`
+			}
 		});
 
-		if (!rsp.ok) throw redirect(302, '/login');
+		if (!rsp.ok) console.error(`failed to get user session: ${rsp.status} ${await rsp.text()}`);
 
-		accessToken = event.cookies.get('access-token');
+		const { id, username, avatar } = await rsp.json();
+
+		event.locals.user = {
+			id,
+			username,
+			avatar: `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`
+		};
 	}
-
-	// * grab the access token again, in case it was just refreshed
-	event.locals.session = !!(event.cookies.get('access-token') && refreshToken);
 
 	return await resolve(event);
 };
 
-const guard: Handle = async ({ resolve, event }) => {
-	if (protectedRoutes.includes(event.url.pathname) && !event.locals.session) {
-		console.warn(`authentication failed for: ${event.url.pathname}`);
+const handleGuard: Handle = async ({ resolve, event }) => {
+	if (!event.locals.user && protectedRoutes.includes(event.url.pathname))
 		throw redirect(302, '/login');
-	} else if (
-		(event.url.pathname === '/login' || event.url.pathname.includes('/auth')) &&
-		event.locals.session
-	) {
-		console.log('already authenticated. redirecting to home page');
+	else if (
+		(event.locals.user && event.url.pathname === '/login') ||
+		(event.locals.user && event.url.pathname.includes('/auth'))
+	)
 		throw redirect(302, '/');
-	}
 
 	return await resolve(event);
 };
 
-export const handle: Handle = sequence(auth, guard);
+export const handle: Handle = sequence(handleAuth, handleUserSession, handleGuard);
