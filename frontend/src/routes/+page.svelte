@@ -4,7 +4,6 @@
 	import { toast } from '$lib/toast';
 	import type { Technology } from '$lib/types';
 	import { getContextClient, gql, mutationStore, queryStore } from '@urql/svelte';
-	import type { ChangeEventHandler } from 'svelte/elements';
 	import { writable } from 'svelte/store';
 	import { superForm } from 'sveltekit-superforms/client';
 	import type { PageData } from './$types';
@@ -13,8 +12,7 @@
 
 	const client = getContextClient();
 	const ltsTechnologies = writable<Technology[]>([]);
-	const searchedTechnologies = writable<Technology[]>([]);
-	const tbd = writable<string[]>([]);
+	const searchedTechnologies = writable<(Technology & { checked: boolean })[]>([]);
 
 	queryStore({
 		client: client,
@@ -80,7 +78,7 @@
 						name: form.data.name,
 						link: form.data.link,
 						tags: form.data.tags.split(','),
-						userId: data.id
+						userId: data.user?.id
 					}
 				}).subscribe(({ error, data }) => {
 					if (error) {
@@ -139,28 +137,15 @@
 						toast({ message: error.message, type: 'error' });
 						console.log(error.message);
 					} else if (data) {
-						searchedTechnologies.set(data.technology);
+						searchedTechnologies.set(
+							(data.technology as Technology[]).map((tech) => ({ ...tech, checked: false }))
+						);
 					}
 				});
 			}
 		}
 	});
 
-	const updateTBD = (id: string | 'all'): ChangeEventHandler<HTMLInputElement> => {
-		return (el) => {
-			if (el.target && (el.target as Record<string, any>).checked) {
-				if (id === 'all') tbd.set($searchedTechnologies.map((tech) => tech.id));
-				else tbd.update((v) => [...v, id]);
-				return;
-			}
-
-			tbd.update((v) => {
-				const i = v.indexOf(id);
-				if (i > -1) v.splice(i, 1);
-				return v;
-			});
-		};
-	};
 	const deleteTBD = () => {
 		mutationStore({
 			client,
@@ -170,14 +155,15 @@
 				}
 			`,
 			variables: {
-				ids: $tbd
+				ids: $searchedTechnologies.filter((tech) => tech.checked).map((tech) => tech.id)
 			}
-		}).subscribe(({ error }) => {
+		}).subscribe(({ error, data }) => {
 			if (error) {
 				toast({ message: error.message, type: 'error' });
-			} else {
+			} else if (data) {
 				toast({ message: 'technologies deleted!', type: 'success' });
 				invalidateAll().catch((error) => toast({ message: error.message, type: 'error' }));
+				searchedTechnologies.set([]);
 			}
 		});
 	};
@@ -265,7 +251,7 @@
 		</div>
 	</div>
 
-	<h1 class="text-xl font-bold text-center">Delete a technology</h1>
+	<h1 class="text-xl font-bold text-center">Search a technology</h1>
 	<div class="card w-11/12 bg-base-200 shadow-inner h-auto my-4">
 		<div class="card-body items-center text-center">
 			<form method="POST" action="?/search" use:searchEnhance class="flex flex-col space-y-6">
@@ -309,7 +295,15 @@
 								<tr>
 									<th>
 										<label>
-											<input type="checkbox" class="checkbox" on:change={updateTBD('all')} />
+											<input
+												type="checkbox"
+												class="checkbox"
+												on:change={(e) => {
+													searchedTechnologies.update((v) =>
+														v.map((tech) => ({ ...tech, checked: e.currentTarget.checked }))
+													);
+												}}
+											/>
 										</label>
 									</th>
 									<th>Name</th>
@@ -325,7 +319,7 @@
 									<tr>
 										<th>
 											<label>
-												<input type="checkbox" class="checkbox" on:change={updateTBD(tech.id)} />
+												<input type="checkbox" class="checkbox" bind:checked={tech.checked} />
 											</label>
 										</th>
 										<td>{tech.name}</td>

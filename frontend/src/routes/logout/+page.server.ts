@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import type { PageServerLoad } from './$types';
 
-export const GET: RequestHandler = async ({ cookies }) => {
+export const load: PageServerLoad = async ({ cookies }) => {
 	cookies.set('access-token', '', { maxAge: -1 });
 	cookies.set('refresh-token', '', { maxAge: -1 });
 

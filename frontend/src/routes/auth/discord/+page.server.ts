@@ -1,8 +1,9 @@
 import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
-import { redirect, type RequestHandler } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
-export const GET: RequestHandler = async () => {
+export const load: PageServerLoad = async () => {
 	const params = new URLSearchParams({
 		client_id: env.CLIENT_ID,
 		redirect_uri: `${publicEnv.PUBLIC_ORIGIN}/auth/discord/callback`,

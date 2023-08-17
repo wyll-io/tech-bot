@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/stores';
 	import { env } from '$env/dynamic/public';
 	import Toast from '$lib/components/toast.svelte';
 	import Icon from '@iconify/svelte';
@@ -10,12 +11,13 @@
 
 	$: ({ user } = data);
 
-	setContextClient(
-		new Client({
-			url: env.PUBLIC_GRAPHQL_ENDPOINT,
-			exchanges: [cacheExchange, fetchExchange]
-		})
-	);
+	if ($page.url.pathname !== '/login')
+		setContextClient(
+			new Client({
+				url: env.PUBLIC_GRAPHQL_ENDPOINT,
+				exchanges: [cacheExchange, fetchExchange]
+			})
+		);
 </script>
 
 <Toast />
@@ -31,7 +33,7 @@
 				<div class="tooltip tooltip-bottom tooltip-info" data-tip="Copy ID">
 					<button
 						class="btn btn-ghost p-0 normal-case"
-						on:click={() => navigator.clipboard.writeText(user.id)}
+						on:click={() => navigator.clipboard.writeText(user ? user.id : '')}
 					>
 						{user.username}
 					</button>
